@@ -36,13 +36,14 @@ The app auto-registers as a login item on first launch (macOS 13+).
 ![Menu bar screenshot](assets/screenshot.png)
 
 ```
-NET | TEMP+fan | CPU | MEM
+NET | TEMP+fan | CPU | MEM | DSK
 ```
 
 - **NET**: ↑ upload / ↓ download (fixed-width arrow + value)
 - **TEMP**: CPU temperature in °C + fan icon linked to [mac-fanctl](https://github.com/DelvinYang/mac-fanctl)
 - **CPU**: CPU usage %
 - **MEM**: Memory usage %
+- **DSK**: Disk usage % with dynamic fill bar (green < 70%, orange 70–90%, red > 90%)
 
 ## Fan Controller Integration
 

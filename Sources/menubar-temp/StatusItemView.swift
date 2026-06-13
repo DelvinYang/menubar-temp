@@ -12,12 +12,14 @@ final class TwoLineView {
         case center
         /// Fixed-width layout with prefix + right-padded value on each line
         case arrowSpeed(maxValueChars: Int, prefixTop: String, prefixBottom: String)
+        case disk
     }
 
     var top = "" { didSet { render() } }
     var bottom = "" { didSet { render() } }
     var rightSymbolName: String? { didSet { render() } }
     var fanAngle: CGFloat = 0 { didSet { render() } }
+    var fillValue: CGFloat = 0 { didSet { render() } }
 
     private let fixedWidth: CGFloat?
     private let imageHeight: CGFloat = 28
@@ -83,6 +85,42 @@ final class TwoLineView {
                     ctx.rotate(by: fanAngle)
                     iconImg.draw(at: NSPoint(x: -iw / 2, y: -ih / 2), from: .zero, operation: .sourceOver, fraction: 1)
                     ctx.restoreGState()
+                }
+            }
+            item.length = w
+
+        case .disk:
+            let pctStr = top
+            let pctSize = (pctStr as NSString).size(withAttributes: topAttr)
+            let bw = (bottom as NSString).size(withAttributes: botAttr).width
+
+            let barW: CGFloat = 28
+            let barH: CGFloat = 8
+            let gap: CGFloat = 4
+            let topLineW = barW + gap + pctSize.width
+            let w = max(topLineW, bw, 4) + 4
+
+            let pct = min(max(fillValue, 0), 1)
+            let barColor: NSColor = pct > 0.9 ? .systemRed : pct > 0.7 ? .systemOrange : .systemGreen
+
+            renderImage(size: NSSize(width: w, height: h)) {
+                let topX = (w - topLineW) / 2
+                let barY = (h - barH) / 2
+                let barRect = NSRect(x: topX, y: barY, width: barW, height: barH)
+
+                let bgPath = NSBezierPath(roundedRect: barRect, xRadius: 2, yRadius: 2)
+                NSColor.black.withAlphaComponent(0.15).setFill()
+                bgPath.fill()
+
+                let fillRect = NSRect(x: topX + 1, y: barY + 1, width: max(0, (barW - 2) * pct), height: barH - 2)
+                let fillPath = NSBezierPath(roundedRect: fillRect, xRadius: 1.5, yRadius: 1.5)
+                barColor.setFill()
+                fillPath.fill()
+
+                (pctStr as NSString).draw(at: NSPoint(x: topX + barW + gap, y: h - pctSize.height - 2), withAttributes: topAttr)
+
+                if !bottom.isEmpty {
+                    (bottom as NSString).draw(at: NSPoint(x: (w - bw) / 2, y: 2), withAttributes: botAttr)
                 }
             }
             item.length = w

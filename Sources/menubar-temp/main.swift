@@ -9,15 +9,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var tempItem: NSStatusItem!
     private var cpuItem: NSStatusItem!
     private var memItem: NSStatusItem!
+    private var diskItem: NSStatusItem!
     private var netView: TwoLineView!
     private var tempView: TwoLineView!
     private var cpuView: TwoLineView!
     private var memView: TwoLineView!
+    private var diskView: TwoLineView!
     private var timer: Timer?
     private let smc: SMCConnection
     private let cpuMon = CpuMonitor()
     private let memMon = MemoryMonitor()
     private let netMon = NetworkMonitor()
+    private let diskMon = DiskMonitor()
     private let fanPidPath = (NSHomeDirectory() as NSString).appendingPathComponent("Desktop/网络工具和服务器指南文档/mac-fanctl/auto-temp-fan.pid")
     private var fanTimer: Timer?
     private var currentTemp: Double = 0
@@ -36,8 +39,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Status items stack right-to-left; first created = farthest right.
-        // Desired order (left→right): net, temp, cpu, mem
-        // Create order (right→left): mem, cpu, temp, net
+        // Desired order (left→right): net, temp, cpu, mem, disk
+        // Create order (right→left): disk, mem, cpu, temp, net
+
+        diskItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        diskView = TwoLineView(item: diskItem, mode: .disk, topFontSize: 11, bottomFontSize: 9)
+        diskView.top = "⟳"
+        diskView.bottom = "DSK"
+        setMenu(diskItem, title: "Disk")
 
         memItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         memView = TwoLineView(item: memItem, mode: .center, topFontSize: 11, bottomFontSize: 9)
@@ -75,6 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateTemperature()
         updateCpu()
         updateMemory()
+        updateDisk()
         updateNetwork()
     }
 
@@ -129,6 +139,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if pct >= 0 {
             memView.top = String(format: "%.0f%%", pct)
             setMenuTitle(memItem, "Memory: \(memView.top)")
+        }
+    }
+
+    private func updateDisk() {
+        let pct = diskMon.usage()
+        if pct >= 0 {
+            diskView.fillValue = CGFloat(pct)
+            diskView.top = String(format: "%.0f%%", pct * 100)
+            setMenuTitle(diskItem, "Disk: \(diskView.top)")
         }
     }
 
