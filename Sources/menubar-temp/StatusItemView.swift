@@ -102,11 +102,12 @@ final class TwoLineView {
 
             let pct = min(max(fillValue, 0), 1)
             let barColor: NSColor = pct > 0.9 ? .systemRed : pct > 0.7 ? .systemOrange : .systemGreen
-            let topY: CGFloat = h - (top as NSString).size(withAttributes: topAttr).height - 2
 
             renderImage(size: NSSize(width: w, height: h)) {
                 let topX = (w - topLineW) / 2
-                let barY = topY + (topFont.ascender + topFont.descender) / 2 - barH / 2
+                let topY = h - (pctStr as NSString).size(withAttributes: topAttr).height - 2
+                let barCenter = topY + topFont.ascender * 0.6
+                let barY = barCenter - barH / 2
 
                 let barRect = NSRect(x: topX, y: barY, width: barW, height: barH)
                 let bgPath = NSBezierPath(roundedRect: barRect, xRadius: 2, yRadius: 2)
