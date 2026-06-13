@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import Foundation
 import ServiceManagement
 
@@ -138,7 +139,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               let pid = pid_t(pidStr) else {
             return false
         }
-        return kill(pid, 0) == 0
+        let rc = kill(pid, 0)
+        return rc == 0 || errno == EPERM
     }
 
     @objc func quit() {

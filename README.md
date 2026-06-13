@@ -30,11 +30,12 @@ The app auto-registers as a login item on first launch (macOS 13+).
 ## Menu Bar Layout (left → right)
 
 ```
-NET | TEMP | CPU | MEM
+NET | TEMP | FAN | CPU | MEM
 ```
 
 - **NET**: ↑ upload / ↓ download (fixed-width arrow + value)
 - **TEMP**: CPU temperature in °C
+- **FAN**: 🔵 fan.fill when auto-temp-fan.py PI controller is running, fan outline when stopped
 - **CPU**: CPU usage %
 - **MEM**: Memory usage %
 
