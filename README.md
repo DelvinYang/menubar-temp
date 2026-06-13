@@ -57,3 +57,7 @@ Sources/
     MemoryMonitor.swift — Memory usage via vm_statistics64
     NetworkMonitor.swift — Network speed via getifaddrs
 ```
+
+## License
+
+This project is licensed under the **MIT License**, with the additional restriction that **commercial use is not permitted**. You may freely use, modify, and share this software for personal, non-commercial purposes. If you make changes, please fork the repository rather than pushing directly to this one.
