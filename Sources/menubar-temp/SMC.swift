@@ -149,7 +149,13 @@ final class SMCConnection {
     }
 
     var hasFan: Bool {
-        (try? readKey("FNum"))?.uint32 ?? 0 > 0
+        // FNum returns uint32 on Intel but uint8 on Apple Silicon
+        if let value = try? readKey("FNum") {
+            if value.bytes.count >= 4 { return value.uint32 > 0 }
+            if value.bytes.count >= 1 { return value.bytes[0] > 0 }
+        }
+        // Fallback: F0Ac key exists only on machines with fans
+        return (try? readKey("F0Ac")) != nil
     }
 
     private func fetchKeyInfo(_ key: String) throws -> (SMCParamStruct, SMCParamStruct) {

@@ -21,7 +21,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let memMon = MemoryMonitor()
     private let netMon = NetworkMonitor()
     private let diskMon = DiskMonitor()
-    private let fanPidPath = (NSHomeDirectory() as NSString).appendingPathComponent("Desktop/网络工具和服务器指南文档/mac-fanctl/auto-temp-fan.pid")
     private var fanTimer: Timer?
     private var currentTemp: Double = 0
     private let fanTempThreshold: Double = 50
@@ -168,13 +167,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func isFanControllerRunning() -> Bool {
-        guard let pidStr = try? String(contentsOfFile: fanPidPath, encoding: .utf8)
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-              let pid = pid_t(pidStr) else {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        task.arguments = ["-f", "auto-temp-fan"]
+        task.standardOutput = Pipe()
+        task.standardError = Pipe()
+        do {
+            try task.run()
+            task.waitUntilExit()
+            return task.terminationStatus == 0
+        } catch {
             return false
         }
-        let rc = kill(pid, 0)
-        return rc == 0 || errno == EPERM
     }
 
     @objc func quit() {
