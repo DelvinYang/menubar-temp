@@ -20,6 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let netMon = NetworkMonitor()
     private let fanPidPath = (NSHomeDirectory() as NSString).appendingPathComponent("Desktop/网络工具和服务器指南文档/mac-fanctl/auto-temp-fan.pid")
     private var fanTimer: Timer?
+    private var currentTemp: Double = 0
+    private let fanTempThreshold: Double = 50
 
     override init() {
         self.smc = try! SMCConnection()
@@ -78,9 +80,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateTemperature() {
         if let result = try? smc.readTemperature() {
+            currentTemp = result.temperature
             tempView.top = String(format: "%.0f°C", result.temperature)
             setMenuTitle(tempItem, "CPU: \(result.key) \(tempView.top)")
         } else {
+            currentTemp = 0
             tempView.top = "N/A"
             setMenuTitle(tempItem, "CPU: N/A")
         }
@@ -107,7 +111,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func fanTick() {
-        tempView.fanAngle += .pi / 4
+        if currentTemp > fanTempThreshold {
+            tempView.fanAngle += .pi / 4
+        }
     }
 
     private func updateCpu() {
