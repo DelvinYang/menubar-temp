@@ -16,6 +16,7 @@ final class TwoLineView {
 
     var top = "" { didSet { render() } }
     var bottom = "" { didSet { render() } }
+    var rightSymbolName: String? { didSet { render() } }
 
     private let fixedWidth: CGFloat?
     private let imageHeight: CGFloat = 28
@@ -49,10 +50,27 @@ final class TwoLineView {
         case .center:
             let tw = (top as NSString).size(withAttributes: topAttr).width
             let bw = (bottom as NSString).size(withAttributes: botAttr).width
-            let w = max(tw, bw, 4) + 2
+
+            var iconImg: NSImage?
+            var iw: CGFloat = 0
+            var ih: CGFloat = 0
+            if let name = rightSymbolName, let img = NSImage(systemSymbolName: name, accessibilityDescription: nil) {
+                let cfg = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+                iconImg = img.withSymbolConfiguration(cfg)
+                iw = iconImg?.size.width ?? 0
+                ih = iconImg?.size.height ?? 0
+            }
+
+            let topLineW = tw + (iw > 0 ? iw + 2 : 0)
+            let w = max(topLineW, bw, 4) + 2
             renderImage(size: NSSize(width: w, height: h)) {
                 if !top.isEmpty {
-                    (top as NSString).draw(at: NSPoint(x: (w - tw) / 2, y: h - (top as NSString).size(withAttributes: topAttr).height - 2), withAttributes: topAttr)
+                    let topH = (top as NSString).size(withAttributes: topAttr).height
+                    let topX = (w - topLineW) / 2
+                    (top as NSString).draw(at: NSPoint(x: topX, y: h - topH - 2), withAttributes: topAttr)
+                    if let iconImg, iw > 0 {
+                        iconImg.draw(at: NSPoint(x: topX + tw + 2, y: (h - ih) / 2), from: .zero, operation: .sourceOver, fraction: 1)
+                    }
                 }
                 if !bottom.isEmpty {
                     (bottom as NSString).draw(at: NSPoint(x: (w - bw) / 2, y: 2), withAttributes: botAttr)
