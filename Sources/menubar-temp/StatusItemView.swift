@@ -61,7 +61,8 @@ final class TwoLineView {
                 ih = iconImg?.size.height ?? 0
             }
 
-            let topLineW = tw + (iw > 0 ? iw + 2 : 0)
+            let gap: CGFloat = 5
+            let topLineW = tw + (iw > 0 ? iw + gap : 0)
             let w = max(topLineW, bw, 4) + 2
             renderImage(size: NSSize(width: w, height: h)) {
                 if !top.isEmpty {
@@ -69,7 +70,7 @@ final class TwoLineView {
                     let topX = (w - topLineW) / 2
                     (top as NSString).draw(at: NSPoint(x: topX, y: h - topH - 2), withAttributes: topAttr)
                     if let iconImg, iw > 0 {
-                        iconImg.draw(at: NSPoint(x: topX + tw + 2, y: (h - ih) / 2), from: .zero, operation: .sourceOver, fraction: 1)
+                        iconImg.draw(at: NSPoint(x: topX + tw + gap, y: (h - ih) / 2), from: .zero, operation: .sourceOver, fraction: 1)
                     }
                 }
                 if !bottom.isEmpty {
