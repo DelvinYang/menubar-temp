@@ -33,6 +33,8 @@ The app auto-registers as a login item on first launch (macOS 13+).
 
 ## Menu Bar Layout (left → right)
 
+![Menu bar screenshot](assets/screenshot.png)
+
 ```
 NET | TEMP+fan | CPU | MEM
 ```
