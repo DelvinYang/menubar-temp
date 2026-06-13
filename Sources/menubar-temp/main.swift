@@ -25,9 +25,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var fanTimer: Timer?
     private var currentTemp: Double = 0
     private let fanTempThreshold: Double = 50
+    private let hasFan: Bool
 
     override init() {
-        self.smc = try! SMCConnection()
+        let smc = try! SMCConnection()
+        self.smc = smc
+        self.hasFan = smc.hasFan
         super.init()
     }
 
@@ -98,11 +101,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             tempView.top = "N/A"
             setMenuTitle(tempItem, "CPU: N/A")
         }
-        let running = isFanControllerRunning()
-        tempView.rightSymbolName = running ? "fan.fill" : "fan"
-        if running {
-            if fanTimer == nil { startFanAnimation() }
+        if hasFan {
+            let running = isFanControllerRunning()
+            tempView.rightSymbolName = running ? "fan.fill" : "fan"
+            if running {
+                if fanTimer == nil { startFanAnimation() }
+            } else {
+                stopFanAnimation()
+            }
         } else {
+            tempView.rightSymbolName = nil
             stopFanAnimation()
         }
     }

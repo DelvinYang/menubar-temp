@@ -148,6 +148,10 @@ final class SMCConnection {
         return nil
     }
 
+    var hasFan: Bool {
+        (try? readKey("FNum"))?.uint32 ?? 0 > 0
+    }
+
     private func fetchKeyInfo(_ key: String) throws -> (SMCParamStruct, SMCParamStruct) {
         var input = SMCParamStruct()
         input.key = try fourCharCode(key)
