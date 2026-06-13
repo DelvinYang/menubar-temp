@@ -17,6 +17,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let cpuMon = CpuMonitor()
     private let memMon = MemoryMonitor()
     private let netMon = NetworkMonitor()
+    private var fanItem: NSStatusItem!
+    private var fanRunning = false
+    private let fanPidPath = (NSHomeDirectory() as NSString).appendingPathComponent("Desktop/网络工具和服务器指南文档/mac-fanctl/auto-temp-fan.pid")
 
     override init() {
         self.smc = try! SMCConnection()
@@ -46,6 +49,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         cpuView.bottom = "CPU"
         setMenu(cpuItem, title: "CPU Usage")
 
+        fanItem = NSStatusBar.system.statusItem(withLength: 26)
+        fanItem.button?.imagePosition = .imageOnly
+        setMenu(fanItem, title: "Fan Controller")
+        updateFanIcon(running: false)
+
         tempItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         tempView = TwoLineView(item: tempItem, mode: .center, topFontSize: 11, bottomFontSize: 9)
         tempView.top = "⟳"
@@ -68,6 +76,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func updateAll() {
         updateTemperature()
+        updateFan()
         updateCpu()
         updateMemory()
         updateNetwork()
@@ -105,6 +114,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             netView.bottom = formatSpeed(speed.download)
             setMenuTitle(netItem, "↑ \(formatSpeed(speed.upload))  ↓ \(formatSpeed(speed.download))")
         }
+    }
+
+    private func updateFan() {
+        let running = isFanControllerRunning()
+        if running != fanRunning {
+            fanRunning = running
+            updateFanIcon(running: running)
+            setMenuTitle(fanItem, "Fan: \(running ? "Running" : "Stopped")")
+        }
+    }
+
+    private func updateFanIcon(running: Bool) {
+        let name = running ? "fan.fill" : "fan"
+        let img = NSImage(systemSymbolName: name, accessibilityDescription: nil)!
+        let config = NSImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        fanItem.button?.image = img.withSymbolConfiguration(config)
+    }
+
+    private func isFanControllerRunning() -> Bool {
+        guard let pidStr = try? String(contentsOfFile: fanPidPath, encoding: .utf8)
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+              let pid = pid_t(pidStr) else {
+            return false
+        }
+        return kill(pid, 0) == 0
     }
 
     @objc func quit() {
