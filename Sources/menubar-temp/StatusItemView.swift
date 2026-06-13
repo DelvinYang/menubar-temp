@@ -94,20 +94,21 @@ final class TwoLineView {
             let pctSize = (pctStr as NSString).size(withAttributes: topAttr)
             let bw = (bottom as NSString).size(withAttributes: botAttr).width
 
-            let barW: CGFloat = 28
-            let barH: CGFloat = 8
-            let gap: CGFloat = 4
+            let barW: CGFloat = 24
+            let barH: CGFloat = 7
+            let gap: CGFloat = 3
             let topLineW = barW + gap + pctSize.width
             let w = max(topLineW, bw, 4) + 4
 
             let pct = min(max(fillValue, 0), 1)
             let barColor: NSColor = pct > 0.9 ? .systemRed : pct > 0.7 ? .systemOrange : .systemGreen
-            let cy = h / 2
+            let topY: CGFloat = h - (top as NSString).size(withAttributes: topAttr).height - 2
 
             renderImage(size: NSSize(width: w, height: h)) {
                 let topX = (w - topLineW) / 2
+                let barY = topY + (topFont.ascender + topFont.descender) / 2 - barH / 2
 
-                let barRect = NSRect(x: topX, y: cy - barH / 2, width: barW, height: barH)
+                let barRect = NSRect(x: topX, y: barY, width: barW, height: barH)
                 let bgPath = NSBezierPath(roundedRect: barRect, xRadius: 2, yRadius: 2)
                 NSColor.black.withAlphaComponent(0.12).setFill()
                 bgPath.fill()
@@ -115,13 +116,12 @@ final class TwoLineView {
                 bgPath.lineWidth = 0.5
                 bgPath.stroke()
 
-                let fillRect = NSRect(x: topX + 1, y: cy - barH / 2 + 1, width: max(0, (barW - 2) * pct), height: barH - 2)
+                let fillRect = NSRect(x: topX + 1, y: barY + 1, width: max(0, (barW - 2) * pct), height: barH - 2)
                 let fillPath = NSBezierPath(roundedRect: fillRect, xRadius: 1.5, yRadius: 1.5)
                 barColor.setFill()
                 fillPath.fill()
 
-                let textBaseline = cy - (topFont.ascender + topFont.descender) / 2
-                (pctStr as NSString).draw(at: NSPoint(x: topX + barW + gap, y: textBaseline), withAttributes: topAttr)
+                (pctStr as NSString).draw(at: NSPoint(x: topX + barW + gap, y: topY), withAttributes: topAttr)
 
                 if !bottom.isEmpty {
                     (bottom as NSString).draw(at: NSPoint(x: (w - bw) / 2, y: 2), withAttributes: botAttr)

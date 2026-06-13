@@ -45,7 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         diskItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         diskView = TwoLineView(item: diskItem, mode: .disk, topFontSize: 11, bottomFontSize: 9)
         diskView.top = "⟳"
-        diskView.bottom = "DSK"
+        diskView.bottom = "DISK"
         setMenu(diskItem, title: "Disk")
 
         memItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
