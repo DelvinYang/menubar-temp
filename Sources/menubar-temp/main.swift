@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let memMon = MemoryMonitor()
     private let netMon = NetworkMonitor()
     private let fanPidPath = (NSHomeDirectory() as NSString).appendingPathComponent("Desktop/网络工具和服务器指南文档/mac-fanctl/auto-temp-fan.pid")
+    private var fanTimer: Timer?
 
     override init() {
         self.smc = try! SMCConnection()
@@ -83,7 +84,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             tempView.top = "N/A"
             setMenuTitle(tempItem, "CPU: N/A")
         }
-        tempView.rightSymbolName = isFanControllerRunning() ? "fan.fill" : "fan"
+        let running = isFanControllerRunning()
+        tempView.rightSymbolName = running ? "fan.fill" : "fan"
+        if running {
+            if fanTimer == nil { startFanAnimation() }
+        } else {
+            stopFanAnimation()
+        }
+    }
+
+    private func startFanAnimation() {
+        fanTimer?.invalidate()
+        tempView.fanAngle = 0
+        fanTimer = Timer.scheduledTimer(timeInterval: 0.125, target: self, selector: #selector(fanTick), userInfo: nil, repeats: true)
+        RunLoop.main.add(fanTimer!, forMode: .common)
+    }
+
+    private func stopFanAnimation() {
+        fanTimer?.invalidate()
+        fanTimer = nil
+        tempView.fanAngle = 0
+    }
+
+    @objc private func fanTick() {
+        tempView.fanAngle += .pi / 4
     }
 
     private func updateCpu() {
@@ -121,6 +145,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func quit() {
+        fanTimer?.invalidate()
         timer?.invalidate()
         NSApp.terminate(nil)
     }

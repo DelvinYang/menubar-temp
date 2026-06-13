@@ -17,6 +17,7 @@ final class TwoLineView {
     var top = "" { didSet { render() } }
     var bottom = "" { didSet { render() } }
     var rightSymbolName: String? { didSet { render() } }
+    var fanAngle: CGFloat = 0 { didSet { render() } }
 
     private let fixedWidth: CGFloat?
     private let imageHeight: CGFloat = 28
@@ -62,19 +63,26 @@ final class TwoLineView {
             }
 
             let gap: CGFloat = 5
-            let topLineW = tw + (iw > 0 ? iw + gap : 0)
-            let w = max(topLineW, bw, 4) + 2
+            let baseW = max(tw, bw, 4) + 2
+            let w = baseW + (iw > 0 ? gap + iw : 0)
             renderImage(size: NSSize(width: w, height: h)) {
                 if !top.isEmpty {
                     let topH = (top as NSString).size(withAttributes: topAttr).height
-                    let topX = (w - topLineW) / 2
-                    (top as NSString).draw(at: NSPoint(x: topX, y: h - topH - 2), withAttributes: topAttr)
-                    if let iconImg, iw > 0 {
-                        iconImg.draw(at: NSPoint(x: topX + tw + gap, y: (h - ih) / 2), from: .zero, operation: .sourceOver, fraction: 1)
-                    }
+                    (top as NSString).draw(at: NSPoint(x: (baseW - tw) / 2, y: h - topH - 2), withAttributes: topAttr)
                 }
                 if !bottom.isEmpty {
-                    (bottom as NSString).draw(at: NSPoint(x: (w - bw) / 2, y: 2), withAttributes: botAttr)
+                    (bottom as NSString).draw(at: NSPoint(x: (baseW - bw) / 2, y: 2), withAttributes: botAttr)
+                }
+                if let iconImg, iw > 0 {
+                    let textRightEdge = max((baseW - tw) / 2 + tw, (baseW - bw) / 2 + bw)
+                    let cx = textRightEdge + gap + iw / 2
+                    let cy = h / 2
+                    let ctx = NSGraphicsContext.current!.cgContext
+                    ctx.saveGState()
+                    ctx.translateBy(x: cx, y: cy)
+                    ctx.rotate(by: fanAngle)
+                    iconImg.draw(at: NSPoint(x: -iw / 2, y: -ih / 2), from: .zero, operation: .sourceOver, fraction: 1)
+                    ctx.restoreGState()
                 }
             }
             item.length = w
