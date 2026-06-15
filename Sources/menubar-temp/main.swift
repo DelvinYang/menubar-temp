@@ -84,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setMenu(tempItem, title: "CPU Temperature")
 
         netItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        netView = TwoLineView(item: netItem, mode: .arrowSpeed(maxValueChars: 11, prefixTop: "↑", prefixBottom: "↓"))
+        netView = TwoLineView(item: netItem, mode: .arrowSpeed(maxValueChars: 10, prefixTop: "↑", prefixBottom: "↓"))
         netView.top = "0 B/s"
         netView.bottom = "0 B/s"
         setMenu(netItem, title: "Network")
