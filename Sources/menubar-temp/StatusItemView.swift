@@ -5,7 +5,6 @@ final class TwoLineView {
     let item: NSStatusItem
     private let topFont: NSFont
     private let bottomFont: NSFont
-    private let color = NSColor.black
     private let mode: Mode
 
     enum Mode {
@@ -21,9 +20,20 @@ final class TwoLineView {
     var fanAngle: CGFloat = 0 { didSet { render() } }
     var fillValue: CGFloat = 0 { didSet { render() } }
 
+    func refresh() { render() }
+
     private let fixedWidth: CGFloat?
     private let imageHeight: CGFloat = 28
     private let arrowValueGap: CGFloat = -2
+
+    private var isDarkMode: Bool {
+        let appearance = item.button?.effectiveAppearance ?? NSApp.effectiveAppearance
+        return appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+
+    private var textColor: NSColor {
+        isDarkMode ? .white : .black
+    }
 
     init(item: NSStatusItem, mode: Mode = .center, topFontSize: CGFloat = 10, bottomFontSize: CGFloat = 10) {
         self.item = item
@@ -45,8 +55,9 @@ final class TwoLineView {
     }
 
     private func render() {
-        let topAttr: [NSAttributedString.Key: Any] = [.font: topFont, .foregroundColor: color]
-        let botAttr: [NSAttributedString.Key: Any] = [.font: bottomFont, .foregroundColor: color]
+        let tc = textColor
+        let topAttr: [NSAttributedString.Key: Any] = [.font: topFont, .foregroundColor: tc]
+        let botAttr: [NSAttributedString.Key: Any] = [.font: bottomFont, .foregroundColor: tc]
         let h = imageHeight
 
         switch mode {
@@ -59,6 +70,7 @@ final class TwoLineView {
             var ih: CGFloat = 0
             if let name = rightSymbolName, let img = NSImage(systemSymbolName: name, accessibilityDescription: nil) {
                 let cfg = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+                    .applying(NSImage.SymbolConfiguration(paletteColors: [tc]))
                 iconImg = img.withSymbolConfiguration(cfg)
                 iw = iconImg?.size.width ?? 0
                 ih = iconImg?.size.height ?? 0
@@ -102,6 +114,12 @@ final class TwoLineView {
 
             let pct = min(max(fillValue, 0), 1)
             let barColor: NSColor = pct > 0.9 ? .systemRed : pct > 0.7 ? .systemOrange : .systemGreen
+            let trackColor: NSColor = isDarkMode
+                ? .white.withAlphaComponent(0.25)
+                : .black.withAlphaComponent(0.12)
+            let borderColor: NSColor = isDarkMode
+                ? .white.withAlphaComponent(0.4)
+                : .black.withAlphaComponent(0.3)
 
             renderImage(size: NSSize(width: w, height: h)) {
                 let topX = (w - topLineW) / 2
@@ -111,9 +129,9 @@ final class TwoLineView {
 
                 let barRect = NSRect(x: topX, y: barY, width: barW, height: barH)
                 let bgPath = NSBezierPath(roundedRect: barRect, xRadius: 2, yRadius: 2)
-                NSColor.black.withAlphaComponent(0.12).setFill()
+                trackColor.setFill()
                 bgPath.fill()
-                NSColor.black.withAlphaComponent(0.3).setStroke()
+                borderColor.setStroke()
                 bgPath.lineWidth = 0.5
                 bgPath.stroke()
 

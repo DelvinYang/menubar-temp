@@ -95,6 +95,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateAll()
         timer = Timer.scheduledTimer(timeInterval: 2.0, target: self, selector: #selector(updateAll), userInfo: nil, repeats: true)
         RunLoop.main.add(timer!, forMode: .common)
+
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(refreshAppearance),
+            name: Notification.Name("NSApplicationDidChangeAppearanceNotification"),
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(refreshAppearance),
+            name: Notification.Name("AppleInterfaceThemeChangedNotification"),
+            object: nil
+        )
+    }
+
+    @objc private func refreshAppearance() {
+        log.log("Appearance changed, refreshing all views")
+        netView.refresh()
+        tempView.refresh()
+        cpuView.refresh()
+        memView.refresh()
+        diskView.refresh()
     }
 
     @objc func updateAll() {
