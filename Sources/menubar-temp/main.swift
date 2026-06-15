@@ -27,17 +27,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hasFan: Bool
 
     override init() {
-        let smc = try! SMCConnection()
+        log.log("AppDelegate init")
+        let smc: SMCConnection
+        do {
+            smc = try SMCConnection()
+            log.log("SMC connected")
+        } catch {
+            log.fault("SMC connection failed: \(error, privacy: .public)")
+            fatalError("SMC connection failed: \(error)")
+        }
         self.smc = smc
         self.hasFan = smc.hasFan
+        log.log("hasFan=\(self.hasFan, privacy: .public)")
         super.init()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        log.log("App did finish launching")
         NSApp.setActivationPolicy(.accessory)
 
         if #available(macOS 13, *) {
-            try? SMAppService.mainApp.register()
+            do {
+                try SMAppService.mainApp.register()
+                log.log("Login item registered")
+            } catch {
+                log.warning("Login item registration failed: \(error, privacy: .public)")
+            }
         }
 
         // Status items stack right-to-left; first created = farthest right.
@@ -69,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setMenu(tempItem, title: "CPU Temperature")
 
         netItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        netView = TwoLineView(item: netItem, mode: .arrowSpeed(maxValueChars: 9, prefixTop: "↑", prefixBottom: "↓"))
+        netView = TwoLineView(item: netItem, mode: .arrowSpeed(maxValueChars: 11, prefixTop: "↑", prefixBottom: "↓"))
         netView.top = "0 B/s"
         netView.bottom = "0 B/s"
         setMenu(netItem, title: "Network")
@@ -90,18 +105,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateNetwork()
     }
 
+    deinit {
+        log.log("AppDelegate deinit")
+    }
+
     private func updateTemperature() {
         if let result = try? smc.readTemperature() {
             currentTemp = result.temperature
             tempView.top = String(format: "%.0f°C", result.temperature)
             setMenuTitle(tempItem, "CPU: \(result.key) \(tempView.top)")
         } else {
+            log.warning("Failed to read temperature")
             currentTemp = 0
             tempView.top = "N/A"
             setMenuTitle(tempItem, "CPU: N/A")
         }
         if hasFan {
             let running = isFanControllerRunning()
+            if running != (tempView.rightSymbolName == "fan.fill") {
+                log.log("Fan controller state changed: running=\(running, privacy: .public)")
+            }
             tempView.rightSymbolName = running ? "fan.fill" : "fan"
             if running {
                 if fanTimer == nil { startFanAnimation() }
@@ -115,6 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startFanAnimation() {
+        log.debug("Starting fan animation")
         fanTimer?.invalidate()
         tempView.fanAngle = 0
         fanTimer = Timer.scheduledTimer(timeInterval: 0.125, target: self, selector: #selector(fanTick), userInfo: nil, repeats: true)
@@ -122,6 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func stopFanAnimation() {
+        log.debug("Stopping fan animation")
         fanTimer?.invalidate()
         fanTimer = nil
         tempView.fanAngle = 0
@@ -138,6 +163,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if pct >= 0 {
             cpuView.top = String(format: "%.0f%%", pct)
             setMenuTitle(cpuItem, "CPU: \(cpuView.top)")
+        } else {
+            log.warning("CPU usage read failed")
         }
     }
 
@@ -146,6 +173,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if pct >= 0 {
             memView.top = String(format: "%.0f%%", pct)
             setMenuTitle(memItem, "Memory: \(memView.top)")
+        } else {
+            log.warning("Memory usage read failed")
         }
     }
 
@@ -155,6 +184,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             diskView.fillValue = CGFloat(pct)
             diskView.top = String(format: "%.0f%%", pct * 100)
             setMenuTitle(diskItem, "Disk: \(diskView.top)")
+        } else {
+            log.warning("Disk usage read failed")
         }
     }
 
@@ -175,13 +206,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             try task.run()
             task.waitUntilExit()
-            return task.terminationStatus == 0
+            let running = task.terminationStatus == 0
+            return running
         } catch {
+            log.warning("pgrep failed: \(error, privacy: .public)")
             return false
         }
     }
 
     @objc func quit() {
+        log.log("User requested quit")
         fanTimer?.invalidate()
         timer?.invalidate()
         NSApp.terminate(nil)
@@ -201,6 +235,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 }
+
+setupCrashHandler()
+log.log("menubar-temp starting")
 
 let app = NSApplication.shared
 let delegate = AppDelegate()
