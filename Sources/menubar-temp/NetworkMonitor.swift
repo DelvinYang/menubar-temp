@@ -1,13 +1,55 @@
 import Foundation
+import SystemConfiguration
 
 final class NetworkMonitor {
     private var lastRx: UInt64 = 0
     private var lastTx: UInt64 = 0
     private var lastTime: Date = .distantPast
+    private var reachability: SCNetworkReachability?
 
     struct Speed {
         let upload: Double
         let download: Double
+    }
+
+    init() {
+        setupReachability()
+    }
+
+    deinit {
+        if let reachability {
+            SCNetworkReachabilitySetDispatchQueue(reachability, nil)
+        }
+    }
+
+    private func setupReachability() {
+        var addr = sockaddr_in()
+        addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        addr.sin_family = sa_family_t(AF_INET)
+        reachability = withUnsafePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                SCNetworkReachabilityCreateWithAddress(kCFAllocatorDefault, $0)
+            }
+        }
+        guard let reachability else { return }
+
+        var context = SCNetworkReachabilityContext(
+            version: 0,
+            info: Unmanaged.passUnretained(self).toOpaque(),
+            retain: nil,
+            release: nil,
+            copyDescription: nil
+        )
+
+        guard SCNetworkReachabilitySetCallback(reachability, { _, flags, info in
+            guard let info else { return }
+            let monitor = Unmanaged<NetworkMonitor>.fromOpaque(info).takeUnretainedValue()
+            if !flags.contains(.reachable) {
+                monitor.reset()
+            }
+        }, &context) else { return }
+
+        SCNetworkReachabilitySetDispatchQueue(reachability, DispatchQueue.global(qos: .background))
     }
 
     var speed: Speed? {
@@ -24,8 +66,23 @@ final class NetworkMonitor {
         let interval = now.timeIntervalSince(lastTime)
         guard interval > 0 else { return nil }
 
+        guard current.rx >= lastRx, current.tx >= lastTx else {
+            lastRx = current.rx
+            lastTx = current.tx
+            lastTime = now
+            return nil
+        }
+
         let downSpeed = Double(current.rx - lastRx) / interval
         let upSpeed = Double(current.tx - lastTx) / interval
+
+        let maxSpeed: Double = 2_000_000_000
+        if downSpeed > maxSpeed || upSpeed > maxSpeed {
+            lastRx = current.rx
+            lastTx = current.tx
+            lastTime = now
+            return nil
+        }
 
         lastRx = current.rx
         lastTx = current.tx
